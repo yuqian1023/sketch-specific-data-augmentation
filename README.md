@@ -3,7 +3,7 @@
 ###Introduction
 
 This repository contains the code for the implementation of sketch-specific data augmentation strategies proposed in the paper: 
-"Sketch Me *That* Shoe" (stroke removal, stroke deformation) and "Sketch-a-Net: A Deep Neural Network that Beats Humans" (add sketch deformation)
+"Sketch Me *That* Shoe" (stroke removal, stroke deformation) and "Sketch-a-Net: A Deep Neural Network that Beats Humans" (sketch deformation)
 
 And if you use the code for your research, please cite our paper:
 
@@ -30,13 +30,13 @@ And if you use the code for your research, please cite our paper:
 	
 ####Contents
 
-1. [stroke removal](#license)
+1. [Stroke removal]
 
-2. [sketch deformation](#installation)
+2. [Sketch deformation]
 
-3. [Run the code](#run-the-demo)
+3. [Run the code]
 
-3. [Extra comment](#Extra-comment)
+3. [Extra comment]
 
 
 ###stroke removal
