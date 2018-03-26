@@ -1,0 +1,443 @@
+<html xmlns:mwsh="http://www.mathworks.com/namespace/mcode/v1/syntaxhighlight.dtd">
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   
+      <!--
+This HTML is auto-generated from an M-file.
+To make changes, update the M-file and republish this document.
+      -->
+      <title>Moving Least Squares</title>
+      <meta name="generator" content="MATLAB 7.2">
+      <meta name="date" content="2006-09-13">
+      <meta name="m-file" content="MLSDdemo"><style>
+
+body {
+  background-color: white;
+  margin:10px;
+}
+
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows.  On Gecko-based browsers, the shrink-to-fit doesn't work. */ 
+p,h1,h2,div.content div {
+  /* for MATLAB's browser */
+  width: 600px;
+  /* for Mozilla, but the "width" tag overrides it anyway */
+  max-width: 600px;
+  /* for IE */
+  width:expression(document.body.clientWidth > 620 ? "600px": "auto" );
+}
+
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
+
+pre.error {
+  color: red;
+}
+
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+  </style></head>
+   <body>
+      <div class="content">
+         <h1>Moving Least Squares</h1>
+         <introduction><pre>The Moving Least Squares algorithm is a deformation technique that
+allows to compute a map f:R2-&gt;R2 from the transformation of a set of N
+pivot points p in the new positions q. The map f is smooth (f in C2),
+preserves the identity (for q=p the map is the identity) and ensures that
+the points p are transformed in the points q (f(p)=q). In the work [1]
+the authors describes a simple optimization technique that allows to get,
+for each point of the R2 plane, the best linear transformation (affinity,
+similarity or rigid transformation) that moves the points according to a
+set of weights of the transformed pi-qi.
+The deformations are here implemented in matlab for points and images
+using as pivots points and segments as explained in [1]. Each algorithm
+(the one with points as pivots and the one with segments as pivots)
+implements the three cases where the local transformation is 'affine',
+'similar' or 'rigid'. Only for Matlab7.2.0 or newer there is the code
+that allows to deform interactively points and images (really funny :).</pre><pre>[1] "Image Deformation Using Moving Least Squares",
+    Scott Schaefer, Travis McPhail, Joe Warren</pre></introduction>
+         <h2>Contents</h2>
+         <div>
+            <ul>
+               <li><a href="#1">MLS for points using points as pivots</a></li>
+               <li><a href="#2">MLS for images using points as pivots</a></li>
+               <li><a href="#3">MLS for points using segments as pivots</a></li>
+               <li><a href="#4">Interactive MLS deformation</a></li>
+               <li><a href="#5">Other infos</a></li>
+            </ul>
+         </div>
+         <h2>MLS for points using points as pivots<a name="1"></a></h2><pre>Here we try to use the MLS tools to deform a set of points. As first
+step the points are required; then the pivots are required; finally the
+new positions of the pivots (in the same order) are taken. Given this set
+of informations the mlsd object can be generated: an mlsd object is the
+precomputation of a deformation on a set of points v given the pivots and
+the deformation type. The mlsd allows to precompute all the values that
+can be computed when the destination positions of the pivots is unknown.
+This allows to get a real-time deformation tool that can work fast on
+images too. Given the mlsd for a set of new pivot positions the
+transformed points can be computed. The default transformation used is
+the rigid one, the same work can be done using different transformation
+types.</pre><pre class="codeinput"><span class="comment">% Collecting the points:</span>
+f=figure; imshow(ones(100));
+v = getpoints;
+close(f);
+
+<span class="comment">% Requiring the pivots:</span>
+f=figure; axis <span class="string">equal</span> <span class="string">ij</span>; hold <span class="string">on</span>; plotshape(v,true,<span class="string">'g-'</span>);
+p = getpoints;
+close(f);
+
+<span class="comment">% Requiring the new pivots:</span>
+f=figure; axis <span class="string">equal</span> <span class="string">ij</span>; hold <span class="string">on</span>; plotshape(v,true,<span class="string">'g-'</span>); plotpointsLabels(p,<span class="string">'r.'</span>);
+q = getpoints;
+close(f);
+
+<span class="comment">% Precomputation of the mlsd:</span>
+mlsd = MLSD2DpointsPrecompute(p,v);
+
+<span class="comment">% Obtaining the transformed points:</span>
+fv = MLSD2DTransform(mlsd,q);
+
+<span class="comment">% Plotting:</span>
+figure;
+subplot(121); axis <span class="string">equal</span> <span class="string">ij</span>; hold <span class="string">on</span>;
+plotshape(v,true,<span class="string">'g-'</span>); plotpoints(p,<span class="string">'r.'</span>);
+subplot(122); axis <span class="string">equal</span> <span class="string">ij</span>; hold <span class="string">on</span>;
+plotshape(fv,true,<span class="string">'k-'</span>); plotpoints(q,<span class="string">'b.'</span>);
+
+<span class="comment">% Other transformations:</span>
+fv_rigid = fv;
+
+<span class="comment">% Transforming the same points using a similarity:</span>
+mlsd = MLSD2DpointsPrecompute(p,v,<span class="string">'similar'</span>);
+fv_similar = MLSD2DTransform(mlsd,q);
+
+<span class="comment">% Transforming the same points using an affinity:</span>
+mlsd = MLSD2DpointsPrecompute(p,v,<span class="string">'affine'</span>);
+fv_affine = MLSD2DTransform(mlsd,q);
+
+<span class="comment">% Plotting:</span>
+figure;
+subplot(141); axis <span class="string">equal</span> <span class="string">ij</span>; hold <span class="string">on</span>;
+plotshape(v,true,<span class="string">'g-'</span>); plotpoints(p,<span class="string">'r.'</span>);
+title(<span class="string">'Original'</span>);
+subplot(142); axis <span class="string">equal</span> <span class="string">ij</span>; hold <span class="string">on</span>;
+plotshape(fv_rigid,true,<span class="string">'k-'</span>); plotpoints(q,<span class="string">'b.'</span>);
+title(<span class="string">'Rigid'</span>);
+subplot(143); axis <span class="string">equal</span> <span class="string">ij</span>; hold <span class="string">on</span>;
+plotshape(fv_similar,true,<span class="string">'k-'</span>); plotpoints(q,<span class="string">'b.'</span>);
+title(<span class="string">'Similar'</span>);
+subplot(144); axis <span class="string">equal</span> <span class="string">ij</span>; hold <span class="string">on</span>;
+plotshape(fv_affine,true,<span class="string">'k-'</span>); plotpoints(q,<span class="string">'b.'</span>);
+title(<span class="string">'Affine'</span>);
+</pre><img vspace="5" hspace="5" src="MLSDdemo_01.png"> <img vspace="5" hspace="5" src="MLSDdemo_02.png"> <h2>MLS for images using points as pivots<a name="2"></a></h2><pre>The same work done for points can be used for images using a dense set
+of points over a grid that cover the image and using the interpolation to
+get all the transformations. The function MLSD2DWarp do exactly this
+work. The same mlsd must be computed to obtain the warping, only the set
+of points is different because a grid is required, so a step must be
+chosen.</pre><pre class="codeinput"><span class="comment">% The step size:</span>
+step = 15;
+
+<span class="comment">% Reading an image:</span>
+img = imread(<span class="string">'image.jpg'</span>);
+
+<span class="comment">% Requiring the pivots:</span>
+f=figure; imshow(img);
+p = getpoints;
+close(f);
+
+<span class="comment">% Requiring the new pivots:</span>
+f=figure; imshow(img); hold <span class="string">on</span>; plotpointsLabels(p,<span class="string">'r.'</span>);
+q = getpoints;
+close(f);
+
+<span class="comment">% Generating the grid:</span>
+[X,Y] = meshgrid(1:step:size(img,2),1:step:size(img,1));
+gv = [X(:)';Y(:)'];
+
+<span class="comment">% Generating the mlsd:</span>
+mlsd = MLSD2DpointsPrecompute(p,gv);
+
+<span class="comment">% The warping can now be computed:</span>
+imgo = MLSD2DWarp(img,mlsd,q,X,Y);
+
+<span class="comment">% Plotting the result:</span>
+figure; imshow(imgo); hold <span class="string">on</span>; plotpoints(q,<span class="string">'r.'</span>);
+</pre><img vspace="5" hspace="5" src="MLSDdemo_03.png"> <h2>MLS for points using segments as pivots<a name="3"></a></h2><pre>The function MLSD2DlinesPrecompute allows to get mlsd object that can be
+used to compute teh MLS deformation of points or images where the
+constraints (pivots) are segments. Here an exemple is shown only for the
+image.</pre><pre class="codeinput"><span class="comment">% Requiring the pivots:</span>
+f=figure; imshow(img);
+lp = getpoints;
+close(f);
+
+<span class="comment">% Rearranging the pivots:</span>
+<span class="keyword">if</span> mod(size(lp,2),2)==1
+    lp = lp(:,1:end-1);
+<span class="keyword">end</span>
+p = [lp(:,1:2:end);lp(:,2:2:end)];
+
+<span class="comment">% Requiring the new pivots:</span>
+f=figure; imshow(img); hold <span class="string">on</span>;
+plotpointsLabels(lp,<span class="string">'r.'</span>);
+plot([p(1,:);p(3,:)],[p(2,:);p(4,:)],<span class="string">'r-'</span>);
+lq = getpoints;
+close(f);
+
+<span class="comment">% Rearranging the pivots:</span>
+<span class="keyword">if</span> mod(size(lq,2),2)==1
+    lq = lq(:,1:end-1);
+<span class="keyword">end</span>
+q = [lq(:,1:2:end);lq(:,2:2:end)];
+
+<span class="comment">% Generating the mlsd:</span>
+mlsd = MLSD2DlinesPrecompute(p,gv);
+
+<span class="comment">% The warping can now be computed:</span>
+imgo = MLSD2DWarp(img,mlsd,q,X,Y);
+
+<span class="comment">% Plotting:</span>
+f=figure; imshow(imgo); hold <span class="string">on</span>;
+plotpointsLabels(lq,<span class="string">'g.'</span>);
+plot([q(1,:);q(3,:)],[q(2,:);q(4,:)],<span class="string">'g-'</span>);
+</pre><img vspace="5" hspace="5" src="MLSDdemo_04.png"> <h2>Interactive MLS deformation<a name="4"></a></h2><pre>Only for Matlab 7.2.0 or higher I've written a pair of functions that
+allows to use the impoint and imline objects to interactively deform
+points or images.
+To act over points interactively write:</pre><pre>MLSDeformPoints(v);</pre><p>the pivots are required and the interactive deformation starts. Closing the window the actual transformed points are saved
+            in the variable fv.  To act over points with segments write:
+         </p><pre>MLSDeformPoints(v,zeros(4,0));</pre><p>in this case the segments are required (a sequence of point pairs).  To work on images use the calls:</p><pre>MLSDeformImage(img);               % Points as pivots
+MLSDeformImage(img,zeros(4,0));    % Segments as pivots</pre><p>the output is saved in the imgo variable.</p>
+         <h2>Other infos<a name="5"></a></h2><pre>There are other parameters that can be used with the MLDS functions, see
+the help to learn more and read the cited work [1].</pre><p class="footer"><br>
+            Published with MATLAB&reg; 7.2<br></p>
+      </div>
+      <!--
+##### SOURCE BEGIN #####
+%% Moving Least Squares
+%  The Moving Least Squares algorithm is a deformation technique that
+% allows to compute a map f:R2->R2 from the transformation of a set of N 
+% pivot points p in the new positions q. The map f is smooth (f in C2),
+% preserves the identity (for q=p the map is the identity) and ensures that
+% the points p are transformed in the points q (f(p)=q). In the work [1]
+% the authors describes a simple optimization technique that allows to get,
+% for each point of the R2 plane, the best linear transformation (affinity,
+% similarity or rigid transformation) that moves the points according to a
+% set of weights of the transformed pi-qi.
+%  The deformations are here implemented in matlab for points and images
+% using as pivots points and segments as explained in [1]. Each algorithm
+% (the one with points as pivots and the one with segments as pivots)
+% implements the three cases where the local transformation is 'affine',
+% 'similar' or 'rigid'. Only for Matlab7.2.0 or newer there is the code
+% that allows to deform interactively points and images (really funny :).
+%
+%  [1] "Image Deformation Using Moving Least Squares",
+%      Scott Schaefer, Travis McPhail, Joe Warren
+
+%% MLS for points using points as pivots
+%  Here we try to use the MLS tools to deform a set of points. As first
+% step the points are required; then the pivots are required; finally the
+% new positions of the pivots (in the same order) are taken. Given this set
+% of informations the mlsd object can be generated: an mlsd object is the
+% precomputation of a deformation on a set of points v given the pivots and
+% the deformation type. The mlsd allows to precompute all the values that
+% can be computed when the destination positions of the pivots is unknown.
+% This allows to get a real-time deformation tool that can work fast on
+% images too. Given the mlsd for a set of new pivot positions the
+% transformed points can be computed. The default transformation used is
+% the rigid one, the same work can be done using different transformation
+% types.
+
+% Collecting the points:
+f=figure; imshow(ones(100));
+v = getpoints;
+close(f);
+
+% Requiring the pivots:
+f=figure; axis equal ij; hold on; plotshape(v,true,'g-');
+p = getpoints;
+close(f);
+
+% Requiring the new pivots:
+f=figure; axis equal ij; hold on; plotshape(v,true,'g-'); plotpointsLabels(p,'r.');
+q = getpoints;
+close(f);
+
+% Precomputation of the mlsd:
+mlsd = MLSD2DpointsPrecompute(p,v);
+
+% Obtaining the transformed points:
+fv = MLSD2DTransform(mlsd,q);
+
+% Plotting:
+figure;
+subplot(121); axis equal ij; hold on;
+plotshape(v,true,'g-'); plotpoints(p,'r.');
+subplot(122); axis equal ij; hold on;
+plotshape(fv,true,'k-'); plotpoints(q,'b.');
+
+% Other transformations:
+fv_rigid = fv;
+
+% Transforming the same points using a similarity:
+mlsd = MLSD2DpointsPrecompute(p,v,'similar');
+fv_similar = MLSD2DTransform(mlsd,q);
+
+% Transforming the same points using an affinity:
+mlsd = MLSD2DpointsPrecompute(p,v,'affine');
+fv_affine = MLSD2DTransform(mlsd,q);
+
+% Plotting:
+figure;
+subplot(141); axis equal ij; hold on;
+plotshape(v,true,'g-'); plotpoints(p,'r.');
+title('Original');
+subplot(142); axis equal ij; hold on;
+plotshape(fv_rigid,true,'k-'); plotpoints(q,'b.');
+title('Rigid');
+subplot(143); axis equal ij; hold on;
+plotshape(fv_similar,true,'k-'); plotpoints(q,'b.');
+title('Similar');
+subplot(144); axis equal ij; hold on;
+plotshape(fv_affine,true,'k-'); plotpoints(q,'b.');
+title('Affine');
+
+%% MLS for images using points as pivots
+%  The same work done for points can be used for images using a dense set
+% of points over a grid that cover the image and using the interpolation to
+% get all the transformations. The function MLSD2DWarp do exactly this
+% work. The same mlsd must be computed to obtain the warping, only the set
+% of points is different because a grid is required, so a step must be
+% chosen.
+
+% The step size:
+step = 15;
+
+% Reading an image:
+img = imread('image.jpg');
+
+% Requiring the pivots:
+f=figure; imshow(img);
+p = getpoints;
+close(f);
+
+% Requiring the new pivots:
+f=figure; imshow(img); hold on; plotpointsLabels(p,'r.');
+q = getpoints;
+close(f);
+
+% Generating the grid:
+[X,Y] = meshgrid(1:step:size(img,2),1:step:size(img,1));
+gv = [X(:)';Y(:)'];
+
+% Generating the mlsd:
+mlsd = MLSD2DpointsPrecompute(p,gv);
+
+% The warping can now be computed:
+imgo = MLSD2DWarp(img,mlsd,q,X,Y);
+
+% Plotting the result:
+figure; imshow(imgo); hold on; plotpoints(q,'r.');
+
+%% MLS for points using segments as pivots
+%  The function MLSD2DlinesPrecompute allows to get mlsd object that can be
+% used to compute teh MLS deformation of points or images where the
+% constraints (pivots) are segments. Here an exemple is shown only for the
+% image.
+
+% Requiring the pivots:
+f=figure; imshow(img);
+lp = getpoints;
+close(f);
+
+% Rearranging the pivots:
+if mod(size(lp,2),2)==1
+    lp = lp(:,1:end-1);
+end
+p = [lp(:,1:2:end);lp(:,2:2:end)];
+
+% Requiring the new pivots:
+f=figure; imshow(img); hold on;
+plotpointsLabels(lp,'r.');
+plot([p(1,:);p(3,:)],[p(2,:);p(4,:)],'r-');
+lq = getpoints;
+close(f);
+
+% Rearranging the pivots:
+if mod(size(lq,2),2)==1
+    lq = lq(:,1:end-1);
+end
+q = [lq(:,1:2:end);lq(:,2:2:end)];
+
+% Generating the mlsd:
+mlsd = MLSD2DlinesPrecompute(p,gv);
+
+% The warping can now be computed:
+imgo = MLSD2DWarp(img,mlsd,q,X,Y);
+
+% Plotting:
+f=figure; imshow(imgo); hold on;
+plotpointsLabels(lq,'g.');
+plot([q(1,:);q(3,:)],[q(2,:);q(4,:)],'g-');
+
+%% Interactive MLS deformation
+%  Only for Matlab 7.2.0 or higher I've written a pair of functions that
+% allows to use the impoint and imline objects to interactively deform
+% points or images.
+%  To act over points interactively write:
+%
+%  MLSDeformPoints(v);
+%
+% the pivots are required and the interactive deformation starts. Closing
+% the window the actual transformed points are saved in the variable fv.
+%  To act over points with segments write:
+%
+%  MLSDeformPoints(v,zeros(4,0));
+%
+% in this case the segments are required (a sequence of point pairs).
+%  To work on images use the calls:
+%
+%  MLSDeformImage(img);               % Points as pivots
+%  MLSDeformImage(img,zeros(4,0));    % Segments as pivots
+%
+% the output is saved in the imgo variable.
+
+%% Other infos
+%  There are other parameters that can be used with the MLDS functions, see
+% the help to learn more and read the cited work [1].
+
+##### SOURCE END #####
+-->
+   </body>
+</html>
