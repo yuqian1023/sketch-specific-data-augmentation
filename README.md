@@ -30,16 +30,16 @@ And if you use the code for your research, please cite our paper:
 	
 ####Contents
 
-1. [Stroke removal]
+1. [Stroke removal](#license)
 
-2. [Sketch deformation]
+2. [Sketch deformation](#installation)
 
-3. [Run the code]
+3. [Run the code](#run-the-demo)
 
-3. [Extra comment]
+4. [Extra comment](#extra-comment)
 
 
-###stroke removal
+###Stroke removal
 
 script file: deformation_script.m
   
@@ -47,7 +47,7 @@ main function: stroke_deformation.m
   
 bezier_def.m
 
-###sketch deformation
+###Sketch deformation
 
 script file: removal_script.m
 
